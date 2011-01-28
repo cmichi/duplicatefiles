@@ -1,29 +1,65 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
+#
+# NAME
+# 	duplicatefiles - a script to check if there are duplicate files in the folder
+#
+# OPTIONS
+#	-l, --loglevel 
+#		debug, info, warning, error, fatal or spam (very verbose)	
+#		Default: info
+#
+#	-t, --treshold
+#		The minimum file size a file has to have, to get compared (in bytes!).
+#		Default: 1024 bytes 
+#
+#	-d, --database
+#		The database to use.
+#		Default: /tmp/dupfdb.<randomint>
+#
+# EXAMPLE
+#	$ python duplicatefiles.py 
+#	
+#
+#	Tested with python 3.1.2
+#
 
-import os,sys,hashlib,logging,sqlite3,random
+import os
+import sys
+import hashlib
+import logging
+import random
+import sqlite3
+
 
 # init logging
 level = logging.INFO
-# very verbose output?
+
+# very verbose output? outputs processing of every file
 SPAM = False
+
 # a database file to store the huge amount of data that will be gathered
 database = "/tmp/dupfdb.%d" % random.randint(0,2**32)
 
 # files that are smaller than the threshold will be ignored
 threshold = 1024
 
-loglevel = {"debug":logging.DEBUG,"info":logging.INFO,"warning":logging.WARNING, 
-        "error":logging.ERROR,"fatal":logging.FATAL,"spam":logging.DEBUG}
+loglevel = {	"debug": logging.DEBUG,
+		"info": logging.INFO,
+		"warning": logging.WARNING,
+		"error": logging.ERROR,
+		"fatal":logging.FATAL,
+		"spam":logging.DEBUG
+}
 
-# parse arguments:
+# parse arguments
 for i in range(len(sys.argv)):
-    if sys.argv[i] == "-l":
+    if sys.argv[i] == "-l" or sys.argv[i] == "--loglevel":
         level = loglevel[sys.argv[i+1].lower()]
         if sys.argv[i+1].lower() == "spam":
             SPAM = True
-    if sys.argv[i] == "-t":
+    if sys.argv[i] == "-t" or sys.argv[i] == "--treshold":
         threshold = int(sys.argv[i+1])
-    if sys.argv[i] == "-d":
+    if sys.argv[i] == "-d" or sys.argv[i] == "--database":
         database = sys.argv[i+1]
 
 logging.basicConfig(level=level)
@@ -31,6 +67,7 @@ logging.basicConfig(level=level)
 # connect to the database
 dbconnection = sqlite3.connect(database)
 db = dbconnection.cursor()
+
 # create tables for the data
 db.execute("CREATE TABLE files (size INTEGER, path TEXT)")
 db.execute("CREATE TABLE same (tag TEXT, path TEXT)")
@@ -38,8 +75,6 @@ db.execute("CREATE TABLE same (tag TEXT, path TEXT)")
 def spam(msg):
     if SPAM:
         logging.debug("SPAM:%s" % msg)
-
-logging.debug("threshold is %d" % threshold)
 
 def hash_file(path):
     "returns hashsum as string"
@@ -55,7 +90,10 @@ def hash_file(path):
         md5.update(byte)
     f.close()
     return md5.hexdigest()
-    
+
+
+logging.debug("threshold is %d" % threshold)
+
 # first collect all files that aren't directories or symlinks
 logging.info("searching for files in current directory ('%s')" 
         % os.path.abspath(os.curdir))
@@ -132,7 +170,7 @@ db.execute("SELECT DISTINCT tag FROM same AS s WHERE (SELECT COUNT(tag) FROM sam
 tags = db.fetchall()
 for tag in tags:
     db.execute("SELECT path FROM same WHERE tag='%s'" % tag[0])
-    print "these files are the same: ",
+    print("these files are the same: ")
     for path in db:
         print("%s," % path[0]),
     print ""
