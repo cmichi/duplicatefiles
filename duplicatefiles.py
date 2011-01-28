@@ -23,7 +23,7 @@
 #	Default values
 #		$ python duplicatefiles.py ./foo
 #
-#	Only output errors
+#	Output only errors
 #		$ python duplicatefiles.py -l=error ./foo
 #
 # INFO
@@ -52,13 +52,13 @@ threshold = 1024
 
 outputTotal = False
 
-loglevel = {	"debug": logging.DEBUG,
-        "info": logging.INFO,
-        "warning": logging.WARNING,
-        "error": logging.ERROR,
-        "fatal":logging.FATAL,
-        "spam":logging.DEBUG
-        }
+loglevel = {"debug": logging.DEBUG,
+            "info": logging.INFO,
+            "warning": logging.WARNING,
+            "error": logging.ERROR,
+            "fatal":logging.FATAL,
+            "spam":logging.DEBUG
+}
 
 # parse arguments
 for i in range(len(sys.argv)):
