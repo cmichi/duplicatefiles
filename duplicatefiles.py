@@ -53,25 +53,25 @@ threshold = 1024
 outputTotal = False
 
 loglevel = {	"debug": logging.DEBUG,
-				"info": logging.INFO,
-				"warning": logging.WARNING,
-				"error": logging.ERROR,
-				"fatal":logging.FATAL,
-				"spam":logging.DEBUG
-}
+        "info": logging.INFO,
+        "warning": logging.WARNING,
+        "error": logging.ERROR,
+        "fatal":logging.FATAL,
+        "spam":logging.DEBUG
+        }
 
 # parse arguments
 for i in range(len(sys.argv)):
-	if sys.argv[i] == "-l" or sys.argv[i] == "--loglevel":
-		level = loglevel[sys.argv[i+1].lower()]
-	if sys.argv[i].lower() == "spam":
-		SPAM = True
-	if sys.argv[i] == "-t" or sys.argv[i] == "--treshold":
-		threshold = int(sys.argv[i+1])
-	if sys.argv[i] == "-d" or sys.argv[i] == "--database":
-		database = sys.argv[i+1]
-	if sys.argv[i] == "-c":
-		outputTotal = True
+    if sys.argv[i] == "-l" or sys.argv[i] == "--loglevel":
+        level = loglevel[sys.argv[i+1].lower()]
+    if sys.argv[i].lower() == "spam":
+        SPAM = True
+    if sys.argv[i] == "-t" or sys.argv[i] == "--treshold":
+        threshold = int(sys.argv[i+1])
+    if sys.argv[i] == "-d" or sys.argv[i] == "--database":
+        database = sys.argv[i+1]
+    if sys.argv[i] == "-c":
+        outputTotal = True
 
 logging.basicConfig(level=level)
 
@@ -161,7 +161,7 @@ while True:
     if not row:
         break
 
-	# only files of the same size can be identical
+    # only files of the same size can be identical
     size = row[0]
     db.execute("SELECT * FROM files WHERE size=%d" % size)
     entries = db.fetchall()
@@ -187,31 +187,31 @@ tags = db.fetchall()
 
 countTotal = 0
 for tag in tags:
-	db.execute("SELECT path FROM same WHERE tag='%s'" % tag[0])
-	print("these files are the same: ")
-	for path in db:
-		print("%s" % path[0])
-		countTotal += 1
-	print("")
+    db.execute("SELECT path FROM same WHERE tag='%s'" % tag[0])
+    print("these files are the same: ")
+    for path in db:
+        print("%s" % path[0])
+        countTotal += 1
+    print("")
 
 
 if outputTotal and len(tags) > 0:
-	duplicateSpace = 0
-	for tag in tags:
-		db.execute("SELECT path FROM same WHERE tag='%s'" % tag[0])
-		firstRun = True
-		paths = db.fetchall()
-		for path in paths:
-			db.execute("SELECT size FROM files WHERE path='%s'" % path)
-			
-			if firstRun == True: 
-				firstRun = False
-			else: 
-				duplicateSpace += db.fetchone()[0]
+    duplicateSpace = 0
+    for tag in tags:
+        db.execute("SELECT path FROM same WHERE tag='%s'" % tag[0])
+        firstRun = True
+        paths = db.fetchall()
+        for path in paths:
+            db.execute("SELECT size FROM files WHERE path='%s'" % path)
 
-	print "\n-------------------------------"
-	print "Duplicate files, total: ", countTotal
-	print "Estimated space freed after deleting duplicates: ca. %s MiB" % (duplicateSpace / 1024 / 1024)
+            if firstRun == True: 
+                firstRun = False
+            else: 
+                duplicateSpace += db.fetchone()[0]
+
+    print "\n-------------------------------"
+    print "Duplicate files, total: ", countTotal
+    print "Estimated space freed after deleting duplicates: ca. %s MiB" % (duplicateSpace / 1024 / 1024)
 
 
 # delete database file
