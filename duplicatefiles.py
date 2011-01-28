@@ -26,7 +26,8 @@
 #	Only output errors
 #		$ python duplicatefiles.py -l=error ./foo
 #
-#	Tested with python 2.6.1
+# INFO
+#	Works with python 2.6.1
 #
 
 import os
