@@ -214,6 +214,7 @@ if outputTotal and len(tags) > 0:
 	print "Estimated space freed after deleting duplicates: ca. %s MiB" % (duplicateSpace / 1024 / 1024)
 
 
-# remove database
+# delete database file
+os.remove(database)
 
 logging.info("END OF LINE")
