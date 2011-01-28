@@ -16,11 +16,17 @@
 #		The database to use.
 #		Default: /tmp/dupfdb.<randomint>
 #
-# EXAMPLE
-#	$ python duplicatefiles.py 
-#	
+#	-c
+#		Outputs total count and estimated file size that could be saved by deleting duplicates.
 #
-#	Tested with python 3.1.2
+# EXAMPLE
+#	Default values
+#		$ python duplicatefiles.py ./foo
+#
+#	Only output errors
+#		$ python duplicatefiles.py -l=error ./foo
+#
+#	Tested with python 2.6.1
 #
 
 import os
@@ -43,34 +49,32 @@ database = "/tmp/dupfdb.%d" % random.randint(0,2**32)
 # files that are smaller than the threshold will be ignored
 threshold = 1024
 
+outputTotal = False
+
 loglevel = {	"debug": logging.DEBUG,
-		"info": logging.INFO,
-		"warning": logging.WARNING,
-		"error": logging.ERROR,
-		"fatal":logging.FATAL,
-		"spam":logging.DEBUG
+				"info": logging.INFO,
+				"warning": logging.WARNING,
+				"error": logging.ERROR,
+				"fatal":logging.FATAL,
+				"spam":logging.DEBUG
 }
 
 # parse arguments
 for i in range(len(sys.argv)):
-    if sys.argv[i] == "-l" or sys.argv[i] == "--loglevel":
-        level = loglevel[sys.argv[i+1].lower()]
-        if sys.argv[i+1].lower() == "spam":
-            SPAM = True
-    if sys.argv[i] == "-t" or sys.argv[i] == "--treshold":
-        threshold = int(sys.argv[i+1])
-    if sys.argv[i] == "-d" or sys.argv[i] == "--database":
-        database = sys.argv[i+1]
+	if sys.argv[i] == "-l" or sys.argv[i] == "--loglevel":
+		level = loglevel[sys.argv[i+1].lower()]
+	if sys.argv[i].lower() == "spam":
+		SPAM = True
+	if sys.argv[i] == "-t" or sys.argv[i] == "--treshold":
+		threshold = int(sys.argv[i+1])
+	if sys.argv[i] == "-d" or sys.argv[i] == "--database":
+		database = sys.argv[i+1]
+	if sys.argv[i] == "-c":
+		outputTotal = True
 
 logging.basicConfig(level=level)
 
-# connect to the database
-dbconnection = sqlite3.connect(database)
-db = dbconnection.cursor()
-
-# create tables for the data
-db.execute("CREATE TABLE files (size INTEGER, path TEXT)")
-db.execute("CREATE TABLE same (tag TEXT, path TEXT)")
+dir = sys.argv[len(sys.argv) - 1]
 
 def spam(msg):
     if SPAM:
@@ -92,27 +96,34 @@ def hash_file(path):
     return md5.hexdigest()
 
 
+# connect to the database
+dbconnection = sqlite3.connect(database)
+db = dbconnection.cursor()
+
+# create tables for the data
+db.execute("CREATE TABLE files (size INTEGER, path TEXT)")
+db.execute("CREATE TABLE same (tag TEXT, path TEXT)")
+
 logging.debug("threshold is %d" % threshold)
 
 # first collect all files that aren't directories or symlinks
-logging.info("searching for files in current directory ('%s')" 
-        % os.path.abspath(os.curdir))
+logging.info("searching for files in directory ('%s')" % dir)
 
 # don't store this in the database. hopefully we won't have so many directories
 # that the programm will run out of memory
-dirs = [os.curdir]
-
-# this dictionary is replaced by the files table in the database
-#files = {}
-
+dirs = [dir]
 filecounter = 0
+
+
 while len(dirs) > 0:
     curdir = dirs.pop()
+
     for f in os.listdir(curdir):
         f = curdir + os.sep + f
         if os.path.islink(f):
             # don't bother us with links *grrr*
             continue
+
         if os.path.isfile(f):
             size = os.path.getsize(f)
             if size <= threshold:
@@ -124,8 +135,8 @@ while len(dirs) > 0:
                 logging.error("%s caused a UnicodeDecodeError. Ignoring and moving on." % f)
 
             filecounter += 1
-            # debug
             spam("found %d files" % filecounter)
+
             if filecounter%10000 == 0:
                 dbconnection.commit()
                 logging.debug("found %d files" % filecounter)
@@ -140,7 +151,6 @@ logging.info("found %d files bigger than %d bytes" % (filecounter, threshold))
 logging.info("starting hashing of files")
 
 # replaced by table same
-# same = {}
 count = 0
 cur = dbconnection.cursor()
 cur.execute("SELECT DISTINCT size FROM files")
@@ -149,9 +159,12 @@ while True:
     row = cur.fetchone()
     if not row:
         break
+
+	# only files of the same size can be identical
     size = row[0]
     db.execute("SELECT * FROM files WHERE size=%d" % size)
     entries = db.fetchall()
+
     if len(entries) < 2:
         continue
     for entry in entries:
@@ -164,15 +177,42 @@ while True:
             dbconnection.commit()
 
 dbconnection.commit()
+
 logging.info("done hashing")
 logging.info("looking for duplicates")
+
 db.execute("SELECT DISTINCT tag FROM same AS s WHERE (SELECT COUNT(tag) FROM same as s2 where s2.tag=s.tag)>1")
 tags = db.fetchall()
+
+countTotal = 0
 for tag in tags:
-    db.execute("SELECT path FROM same WHERE tag='%s'" % tag[0])
-    print("these files are the same: ")
-    for path in db:
-        print("%s," % path[0]),
-    print ""
+	db.execute("SELECT path FROM same WHERE tag='%s'" % tag[0])
+	print("these files are the same: ")
+	for path in db:
+		print("%s" % path[0])
+		countTotal += 1
+	print("")
+
+
+if outputTotal and len(tags) > 0:
+	duplicateSpace = 0
+	for tag in tags:
+		db.execute("SELECT path FROM same WHERE tag='%s'" % tag[0])
+		firstRun = True
+		paths = db.fetchall()
+		for path in paths:
+			db.execute("SELECT size FROM files WHERE path='%s'" % path)
+			
+			if firstRun == True: 
+				firstRun = False
+			else: 
+				duplicateSpace += db.fetchone()[0]
+
+	print "\n-------------------------------"
+	print "Duplicate files, total: ", countTotal
+	print "Estimated space freed after deleting duplicates: ca. %s MiB" % (duplicateSpace / 1024 / 1024)
+
+
+# remove database
 
 logging.info("END OF LINE")
