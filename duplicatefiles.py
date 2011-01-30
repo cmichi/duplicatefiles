@@ -19,6 +19,10 @@
 #	-c
 #		Outputs total count and estimated file size that could be saved by deleting duplicates.
 #
+#   -s
+#       Keeps the first occurence of the file, deletes the other occurences of the file
+#       and sets a symbolic link to the first file.
+#
 # EXAMPLE
 #	Default values
 #		$ python duplicatefiles.py ./foo
@@ -51,6 +55,8 @@ database = "/tmp/dupfdb.%d" % random.randint(0,2**32)
 threshold = 1024
 
 outputTotal = False
+setLinks = False
+countTotal = 0
 
 loglevel = {"debug": logging.DEBUG,
             "info": logging.INFO,
@@ -70,7 +76,10 @@ for i in range(len(sys.argv)):
         threshold = int(sys.argv[i+1])
     if sys.argv[i] == "-d" or sys.argv[i] == "--database":
         database = sys.argv[i+1]
+    if sys.argv[i] == "-h":
+        setLinks = True
     if sys.argv[i] == "-c":
+        outputTotal = True
         outputTotal = True
 
 logging.basicConfig(level=level)
@@ -185,12 +194,26 @@ logging.info("looking for duplicates")
 db.execute("SELECT DISTINCT tag FROM same AS s WHERE (SELECT COUNT(tag) FROM same as s2 where s2.tag=s.tag)>1")
 tags = db.fetchall()
 
-countTotal = 0
+# output the results
 for tag in tags:
+    firstFile = False
     db.execute("SELECT path FROM same WHERE tag='%s'" % tag[0])
     print "these files are the same: "
     for path in db:
-        print "%s" % unicode(path[0]).encode('utf-8')
+        path = unicode(path[0]).encode('utf-8')
+
+        if setLinks:
+            if firstFile is False:
+                logging.debug("first file is %s" % path)
+                firstFile = path
+            else:
+                logging.debug("removing %s" % path)
+                os.remove(path)
+                logging.debug("creating link to %s" % path)
+                os.symlink(firstFile, path)
+                #os.link(firstFile, path)
+
+        print "%s" % path
         countTotal += 1
     print("")
 
