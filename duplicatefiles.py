@@ -188,9 +188,9 @@ tags = db.fetchall()
 countTotal = 0
 for tag in tags:
     db.execute("SELECT path FROM same WHERE tag='%s'" % tag[0])
-    print("these files are the same: ")
+    print "these files are the same: "
     for path in db:
-        print("%s" % path[0])
+        print "%s" % unicode(path[0]).encode('utf-8')
         countTotal += 1
     print("")
 
@@ -202,7 +202,7 @@ if outputTotal and len(tags) > 0:
         firstRun = True
         paths = db.fetchall()
         for path in paths:
-            db.execute("SELECT size FROM files WHERE path='%s'" % path)
+            db.execute("SELECT size FROM files WHERE path=?", (path[0],))
 
             if firstRun == True: 
                 firstRun = False
