@@ -4,7 +4,7 @@ The goal of this script is to identify duplicates in the filesystem.
 In my case I used it to sanatize my 140 GB media folder from duplicated mp3 files and saved about 800 MB.
 Using the flag `-s` the script keeps one occurence of the file, deletes duplicates and sets hardlinks.
 
-iTunes had no problems with the mediatek after I exeucted the script.
+iTunes had no problems with the mediatek after I executed the script.
 
 
 ## Usage
@@ -16,11 +16,13 @@ The call
 keeps one occurence of the file and deletes the duplicates. 
 Then hardlinks which point to the first file are generated for the duplicates.
 
+* * *
 
 Output only errors:
 
 	$ python duplicatefiles.py -l=error ./foo
 
+* * *
 
 The call
 
