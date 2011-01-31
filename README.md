@@ -16,13 +16,13 @@ The call
 keeps one occurence of the file and deletes the duplicates. 
 Then hardlinks which point to the first file are generated for the duplicates.
 
-* * *
+---------------------------------------
 
 Output only errors:
 
 	$ python duplicatefiles.py -l=error ./foo
 
-* * *
+---------------------------------------
 
 The call
 
