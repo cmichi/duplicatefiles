@@ -21,7 +21,7 @@
 #
 #   -s
 #       Keeps the first occurence of the file, deletes the other occurences of the file
-#       and sets a symbolic link to the first file.
+#       and sets a hard link to the first file.
 #
 # EXAMPLE
 #	Default values
@@ -76,7 +76,7 @@ for i in range(len(sys.argv)):
         threshold = int(sys.argv[i+1])
     if sys.argv[i] == "-d" or sys.argv[i] == "--database":
         database = sys.argv[i+1]
-    if sys.argv[i] == "-h":
+    if sys.argv[i] == "-s":
         setLinks = True
     if sys.argv[i] == "-c":
         outputTotal = True
@@ -209,9 +209,9 @@ for tag in tags:
             else:
                 logging.debug("removing %s" % path)
                 os.remove(path)
+                print "remove %s" % path
                 logging.debug("creating link to %s" % path)
-                os.symlink(firstFile, path)
-                #os.link(firstFile, path)
+                os.link(firstFile, path)
 
         print "%s" % path
         countTotal += 1
