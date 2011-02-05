@@ -201,6 +201,8 @@ for tag in tags:
     print "these files are the same: "
     for path in db:
         path = unicode(path[0]).encode('utf-8')
+        path = path.strip()
+        path = path.replace('"', '\\"')
 
         if setLinks:
             if firstFile is False:
@@ -208,9 +210,8 @@ for tag in tags:
                 firstFile = path
             else:
                 logging.debug("removing %s" % path)
-                os.remove(path)
-                print "remove %s" % path
-                logging.debug("creating link to %s" % path)
+                os.system('rm -f "' + path + '"')
+                logging.debug("creating link from %s to %s" % (firstFile, path))
                 os.link(firstFile, path)
 
         print "%s" % path
