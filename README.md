@@ -49,4 +49,4 @@ Run `chflags -R nouchg *` on the folder you are trying to sanatize to recursivel
 
  * File processing: Check if file is locked, if true try to unlock it
  * Add flag: Just process filetype *.jpg, for example
-
+ * Replace the syscalls with plattform-independent python methods
